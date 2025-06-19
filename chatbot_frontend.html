@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CareGP Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0e1a2b, #1a2f4d);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-container {
+      width: 380px;
+      background: linear-gradient(to bottom, #e5f1fd, #c9e4fb);
+      border-radius: 24px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-header {
+      background-color: #031b36;
+      padding: 28px 20px;
+      text-align: center;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .chat-header img {
+      height: 64px;
+    }
+
+    .chat-header span {
+      font-size: 28px;
+      font-weight: 600;
+      color: #60bfff;
+    }
+
+    .chat-messages {
+      padding: 24px;
+      height: 300px;
+      overflow-y: auto;
+      font-size: 18px;
+      color: #003355;
+      flex-grow: 1;
+    }
+
+    .message {
+      margin-bottom: 20px;
+      line-height: 1.6;
+      border-radius: 14px;
+      padding: 14px 18px;
+      max-width: 85%;
+    }
+
+    .user {
+      background-color: #d0ecff;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .bot {
+      background-color: #ffffff;
+      align-self: flex-start;
+      margin-right: auto;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .input-area {
+      display: flex;
+      border-top: 1px solid #bfdcff;
+      padding: 12px 18px;
+      background-color: #e4f3ff;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 14px 18px;
+      border-radius: 20px;
+      border: none;
+      font-size: 16px;
+      outline: none;
+      background-color: #ffffff;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    button {
+      background: linear-gradient(to right, #00c6ff, #0072ff);
+      border: none;
+      color: white;
+      padding: 14px;
+      margin-left: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 114, 255, 0.4);
+      transition: background 0.3s ease;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #00b5ff, #0055cc);
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img src="Logo.png" alt="Care GP Logo">
+      <span>CARE GP</span>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message bot">Ask me anything and I’ll fetch the info you need.</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Enter your message..." />
+      <button onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <script>
+    let chatId = null;
+
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      appendMessage(message, 'user');
+      input.value = '';
+
+      try {
+        const bodyData = { message };
+        if (chatId) {
+          bodyData.chat_id = chatId;
+        }
+
+        const response = await fetch('http://127.0.0.1:5000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyData)
+        });
+
+        const data = await response.json();
+
+        if (data.response) {
+          appendMessage(data.response, 'bot');
+          if (data.chat_id && !chatId) {
+            chatId = data.chat_id;  // Set chat_id after first reply
+          }
+        } else if (data.error) {
+          appendMessage("⚠️ " + data.error, 'bot');
+        } else {
+          appendMessage("⚠️ Unexpected response", 'bot');
+        }
+      } catch (error) {
+        appendMessage("⚠️ Network error: " + error.message, 'bot');
+      }
+    }
+
+    function appendMessage(text, sender) {
+      const container = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = `message ${sender}`;
+      div.textContent = text;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    document.getElementById("userInput").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
