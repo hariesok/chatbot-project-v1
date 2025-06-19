@@ -104,4 +104,10 @@ User Question:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    from os import environ
+    # app.run(debug=True)
+    app.run(
+        host='0.0.0.0',
+        port=int(environ.get("PORT",5000)),
+        debug=False
+    )
